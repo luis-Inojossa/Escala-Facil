@@ -43,7 +43,7 @@ def executar_python(args):
     env["PYTHONPATH"] = os.path.dirname(__file__)
     
     proc = subprocess.run(
-        ["/usr/bin/python3.11", script_path] + args,
+        [sys.executable, script_path] + args,
         capture_output=True,
         text=True,
         cwd=os.path.dirname(__file__),
