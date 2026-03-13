@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EscalaFácil — Consulte seus plantões do SAMU</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      max-width: 600px;
+      width: 100%;
+      padding: 40px;
+      animation: slideIn 0.3s ease-out;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    h1 {
+      color: #333;
+      font-size: 32px;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+
+    .subtitle {
+      color: #666;
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 14px;
+    }
+
+    h2 {
+      color: #333;
+      font-size: 24px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    h3 {
+      color: #667eea;
+      font-size: 18px;
+      margin-top: 30px;
+      margin-bottom: 15px;
+      border-bottom: 2px solid #667eea;
+      padding-bottom: 10px;
+    }
+
+    input[type="file"],
+    input[type="text"] {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 15px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 16px;
+      transition: border-color 0.3s;
+    }
+
+    input[type="file"]:focus,
+    input[type="text"]:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      margin-top: 10px;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    .message {
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      font-size: 14px;
+      text-align: center;
+    }
+
+    .message.loading {
+      background: #e3f2fd;
+      color: #1976d2;
+    }
+
+    .message.error {
+      background: #ffebee;
+      color: #c62828;
+    }
+
+    .message.success {
+      background: #e8f5e9;
+      color: #2e7d32;
+    }
+
+    /* TELA 1: UPLOAD */
+    #tela-upload {
+      display: block;
+    }
+
+    .upload-area {
+      border: 2px dashed #667eea;
+      border-radius: 8px;
+      padding: 30px;
+      text-align: center;
+      background: #f5f7ff;
+      margin-bottom: 20px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .upload-area:hover {
+      background: #eef2ff;
+    }
+
+    .upload-area.active {
+      background: #e3f2fd;
+      border-color: #1976d2;
+    }
+
+    .upload-icon {
+      font-size: 48px;
+      margin-bottom: 10px;
+    }
+
+    .upload-text {
+      color: #666;
+      font-size: 14px;
+    }
+
+    #campo-pdf {
+      display: none;
+    }
+
+    /* TELA 2: CONFIRMAR */
+    #tela-confirmar {
+      display: none;
+    }
+
+    .match-item {
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 12px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .match-item:hover {
+      border-color: #667eea;
+      background: #f5f7ff;
+    }
+
+    .match-item input[type="radio"] {
+      margin-right: 10px;
+      cursor: pointer;
+      width: 18px;
+      height: 18px;
+    }
+
+    .match-label {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .match-name {
+      font-weight: 600;
+      color: #333;
+    }
+
+    .match-score {
+      color: #667eea;
+      font-weight: 600;
+      margin: 0 8px;
+    }
+
+    .match-base {
+      color: #999;
+      font-size: 12px;
+    }
+
+    /* TELA 3: RESULTADO */
+    #tela-resultado {
+      display: none;
+    }
+
+    .profissional-header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .profissional-header h2 {
+      color: white;
+      margin-bottom: 0;
+      border-bottom: none;
+    }
+
+    .resumo-cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .resumo-card {
+      background: #f5f7ff;
+      border: 2px solid #667eea;
+      border-radius: 8px;
+      padding: 15px;
+      text-align: center;
+    }
+
+    .resumo-card .numero {
+      font-size: 28px;
+      font-weight: 700;
+      color: #667eea;
+    }
+
+    .resumo-card .label {
+      font-size: 12px;
+      color: #666;
+      margin-top: 5px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+      font-size: 14px;
+    }
+
+    table th {
+      background: #f5f7ff;
+      color: #667eea;
+      padding: 12px;
+      text-align: left;
+      font-weight: 600;
+      border-bottom: 2px solid #667eea;
+    }
+
+    table td {
+      padding: 12px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    table tr:hover {
+      background: #f9f9f9;
+    }
+
+    .tabela-vazia {
+      text-align: center;
+      color: #999;
+      padding: 20px;
+      font-style: italic;
+    }
+
+    /* TELA 4: ERRO */
+    #tela-erro {
+      display: none;
+      text-align: center;
+    }
+
+    .erro-icon {
+      font-size: 64px;
+      margin-bottom: 20px;
+    }
+
+    .erro-mensagem {
+      color: #c62828;
+      font-size: 16px;
+      margin-bottom: 30px;
+      padding: 15px;
+      background: #ffebee;
+      border-radius: 8px;
+    }
+
+    /* Responsivo */
+    @media (max-width: 600px) {
+      .container {
+        padding: 20px;
+      }
+
+      h1 {
+        font-size: 24px;
+      }
+
+      h2 {
+        font-size: 20px;
+      }
+
+      .resumo-cards {
+        grid-template-columns: 1fr;
+      }
+
+      table {
+        font-size: 12px;
+      }
+
+      table th,
+      table td {
+        padding: 8px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <!-- TELA 1: UPLOAD -->
+    <div id="tela-upload">
+      <h1>🏥 EscalaFácil</h1>
+      <p class="subtitle">Consulte seus plantões do SAMU</p>
+
+      <div class="upload-area" onclick="document.getElementById('campo-pdf').click()">
+        <div class="upload-icon">📄</div>
+        <div class="upload-text">Clique para selecionar o PDF da escala</div>
+      </div>
+      <input type="file" id="campo-pdf" accept=".pdf" onchange="atualizarNomePdf()">
+
+      <input type="text" id="campo-nome" placeholder="Ex: LUIS AUGUSTO M. DE SOUZA" 
+        onkeypress="if(event.key==='Enter') buscarPlantoes()">
+
+      <button onclick="buscarPlantoes()">🔍 Buscar meus plantões</button>
+
+      <div id="msg-upload" class="message" style="display:none"></div>
+
+      <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 15px; margin-top: 20px; font-size: 13px; color: #856404;">
+        <strong>⚠️ Como funciona:</strong><br>
+        1. Selecione o PDF da escala mensal do SAMU<br>
+        2. Digite seu nome como aparece na escala<br>
+        3. O sistema encontrará seus plantões automaticamente<br>
+        4. Confirme sua identidade e veja os resultados
+      </div>
+    </div>
+
+    <!-- TELA 2: CONFIRMAR -->
+    <div id="tela-confirmar">
+      <h2>👤 Qual é você?</h2>
+      <p class="subtitle">Selecione seu nome na lista</p>
+
+      <div id="lista-matches"></div>
+
+      <button onclick="confirmarNome()">✓ Confirmar</button>
+      <button onclick="novaBusca()" style="background: #999; margin-top: 5px;">← Voltar</button>
+
+      <div id="msg-confirmar" class="message" style="display:none"></div>
+    </div>
+
+    <!-- TELA 3: RESULTADO -->
+    <div id="tela-resultado">
+      <div class="profissional-header">
+        <h2 id="nome-profissional">—</h2>
+      </div>
+
+      <div class="resumo-cards" id="cards-resumo"></div>
+
+      <h3>🌙 Plantões Regulares</h3>
+      <table id="tabela-regulares"></table>
+
+      <h3>⭐ Plantões Extras</h3>
+      <table id="tabela-extras"></table>
+
+      <h3>📅 Folgas</h3>
+      <table id="tabela-folgas"></table>
+
+      <button onclick="novaBusca()">← Nova busca</button>
+    </div>
+
+    <!-- TELA 4: ERRO -->
+    <div id="tela-erro">
+      <div class="erro-icon">❌</div>
+      <div class="erro-mensagem" id="msg-erro">Erro ao processar</div>
+      <button onclick="novaBusca()">← Tentar novamente</button>
+    </div>
+
+  </div>
+
+  <script>
+    // ============================================
+    // CONFIGURAÇÃO
+    // ============================================
+    const API_URL = 'http://localhost:8000'
+
+    // ============================================
+    // ESTADO GLOBAL
+    // ============================================
+    let sessionId = null
+    let matchSelecionado = null
+    let pdfNome = ''
+
+    // ============================================
+    // CONTROLE DE TELAS
+    // ============================================
+    function mostrarTela(nome) {
+      document.getElementById('tela-upload').style.display = 'none'
+      document.getElementById('tela-confirmar').style.display = 'none'
+      document.getElementById('tela-resultado').style.display = 'none'
+      document.getElementById('tela-erro').style.display = 'none'
+      document.getElementById('tela-' + nome).style.display = 'block'
+    }
+
+    // ============================================
+    // AÇÃO 1: BUSCAR PLANTÕES
+    // ============================================
+    async function buscarPlantoes() {
+      const pdfInput = document.getElementById('campo-pdf')
+      const nomeInput = document.getElementById('campo-nome')
+      const msgDiv = document.getElementById('msg-upload')
+
+      if (!pdfInput.files[0]) {
+        msgDiv.textContent = '❌ Selecione um PDF'
+        msgDiv.className = 'message error'
+        msgDiv.style.display = 'block'
+        return
+      }
+
+      if (!nomeInput.value.trim()) {
+        msgDiv.textContent = '❌ Digite seu nome'
+        msgDiv.className = 'message error'
+        msgDiv.style.display = 'block'
+        return
+      }
+
+      msgDiv.textContent = '⏳ Processando PDF...'
+      msgDiv.className = 'message loading'
+      msgDiv.style.display = 'block'
+
+      try {
+        const formData = new FormData()
+        formData.append('pdf', pdfInput.files[0])
+        formData.append('nome', nomeInput.value.trim())
+
+        console.log('[BUSCAR] Enviando PDF para:', API_URL + '/processar')
+
+        const resp = await fetch(API_URL + '/processar', {
+          method: 'POST',
+          body: formData
+        })
+
+        console.log('[BUSCAR] Status:', resp.status)
+
+        const data = await resp.json()
+        console.log('[BUSCAR] Resposta:', data)
+
+        if (!resp.ok) {
+          throw new Error(data.detail || 'Erro no servidor')
+        }
+
+        if (!data.matches || data.matches.length === 0) {
+          throw new Error('Nenhum profissional encontrado. Verifique o nome digitado.')
+        }
+
+        sessionId = data.session_id
+        renderizarMatches(data.matches)
+        mostrarTela('confirmar')
+
+      } catch (err) {
+        console.error('[BUSCAR ERROR]', err)
+        msgDiv.textContent = '❌ ' + err.message
+        msgDiv.className = 'message error'
+        msgDiv.style.display = 'block'
+      }
+    }
+
+    function atualizarNomePdf() {
+      const input = document.getElementById('campo-pdf')
+      if (input.files[0]) {
+        pdfNome = input.files[0].name
+        console.log('[PDF] Selecionado:', pdfNome)
+      }
+    }
+
+    // ============================================
+    // RENDERIZAR MATCHES
+    // ============================================
+    function renderizarMatches(matches) {
+      const lista = document.getElementById('lista-matches')
+      lista.innerHTML = ''
+
+      matches.forEach((m, i) => {
+        const div = document.createElement('div')
+        div.className = 'match-item'
+        div.innerHTML = `
+          <label class="match-label">
+            <input type="radio" name="match" value="${m.nome}" 
+              ${i === 0 ? 'checked' : ''} 
+              onchange="matchSelecionado='${m.nome}'">
+            <span class="match-name">${m.nome}</span>
+            <span class="match-score">${m.score}%</span>
+            <span class="match-base">${m.base}</span>
+          </label>
+        `
+        lista.appendChild(div)
+      })
+
+      matchSelecionado = matches[0].nome
+    }
+
+    // ============================================
+    // AÇÃO 2: CONFIRMAR NOME
+    // ============================================
+    async function confirmarNome() {
+      const radio = document.querySelector('input[name="match"]:checked')
+      if (!radio) return
+
+      const msgDiv = document.getElementById('msg-confirmar')
+      msgDiv.textContent = '⏳ Carregando plantões...'
+      msgDiv.className = 'message loading'
+      msgDiv.style.display = 'block'
+
+      try {
+        const formData = new FormData()
+        formData.append('session_id', sessionId)
+        formData.append('nome_escolhido', radio.value)
+
+        console.log('[CONFIRMAR] Enviando:', { sessionId, nome: radio.value })
+
+        const resp = await fetch(API_URL + '/confirmar', {
+          method: 'POST',
+          body: formData
+        })
+
+        console.log('[CONFIRMAR] Status:', resp.status)
+
+        const data = await resp.json()
+        console.log('[CONFIRMAR] Resposta:', data)
+
+        if (!resp.ok) {
+          throw new Error(data.detail || 'Erro ao confirmar')
+        }
+
+        renderizarResultado(data)
+        mostrarTela('resultado')
+
+      } catch (err) {
+        console.error('[CONFIRMAR ERROR]', err)
+        msgDiv.textContent = '❌ ' + err.message
+        msgDiv.className = 'message error'
+        msgDiv.style.display = 'block'
+      }
+    }
+
+    // ============================================
+    // RENDERIZAR RESULTADO
+    // ============================================
+    function renderizarResultado(data) {
+      // Cabeçalho
+      document.getElementById('nome-profissional').textContent =
+        data.profissional + ' — ' + (data.base || '')
+
+      // Resumo
+      const regulares = data.plantoes || []
+      const extras = data.extras || []
+      const folgas = data.folgas || []
+
+      document.getElementById('cards-resumo').innerHTML = `
+        <div class="resumo-card">
+          <div class="numero">${regulares.length}</div>
+          <div class="label">Regulares</div>
+        </div>
+        <div class="resumo-card">
+          <div class="numero">${extras.length}</div>
+          <div class="label">Extras</div>
+        </div>
+        <div class="resumo-card">
+          <div class="numero">${folgas.length}</div>
+          <div class="label">Folgas</div>
+        </div>
+      `
+
+      // Tabelas
+      document.getElementById('tabela-regulares').innerHTML = renderizarTabela(regulares)
+      document.getElementById('tabela-extras').innerHTML = renderizarTabela(extras)
+      document.getElementById('tabela-folgas').innerHTML = renderizarTabelaFolgas(folgas)
+    }
+
+    function renderizarTabela(lista) {
+      if (!lista || lista.length === 0) {
+        return '<tr><td colspan="5" class="tabela-vazia">Nenhum plantão</td></tr>'
+      }
+
+      let html = `
+        <thead>
+          <tr>
+            <th>Dia</th>
+            <th>Data</th>
+            <th>Local</th>
+            <th>Início</th>
+            <th>Fim</th>
+          </tr>
+        </thead>
+        <tbody>
+      `
+
+      lista.forEach(p => {
+        html += `
+          <tr>
+            <td>${p.dia || '—'}</td>
+            <td>${p.data || '—'}</td>
+            <td>${p.local || '—'}</td>
+            <td>${p.inicio || '—'}</td>
+            <td>${p.fim || '—'}</td>
+          </tr>
+        `
+      })
+
+      html += '</tbody>'
+      return html
+    }
+
+    function renderizarTabelaFolgas(folgas) {
+      if (!folgas || folgas.length === 0) {
+        return '<tr><td colspan="1" class="tabela-vazia">Nenhuma folga</td></tr>'
+      }
+
+      let html = `
+        <thead>
+          <tr>
+            <th>Dia</th>
+          </tr>
+        </thead>
+        <tbody>
+      `
+
+      folgas.forEach(dia => {
+        html += `<tr><td>${dia}</td></tr>`
+      })
+
+      html += '</tbody>'
+      return html
+    }
+
+    // ============================================
+    // AÇÃO 3: NOVA BUSCA
+    // ============================================
+    function novaBusca() {
+      sessionId = null
+      matchSelecionado = null
+      document.getElementById('campo-pdf').value = ''
+      document.getElementById('campo-nome').value = ''
+      document.getElementById('msg-upload').style.display = 'none'
+      document.getElementById('msg-confirmar').style.display = 'none'
+      mostrarTela('upload')
+    }
+
+    // ============================================
+    // INICIALIZAÇÃO
+    // ============================================
+    console.log('[INIT] EscalaFácil carregado')
+    console.log('[INIT] API URL:', API_URL)
+  </script>
+</body>
+</html>
